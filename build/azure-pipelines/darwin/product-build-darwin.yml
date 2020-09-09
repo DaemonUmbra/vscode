@@ -53,9 +53,13 @@ steps:
     git merge $(node -p "require('./package.json').distro")
   displayName: Merge distro
 
+- script: |
+    echo -n $VSCODE_ARCH > .build/arch
+  displayName: Prepare arch cache flag
+
 - task: 1ESLighthouseEng.PipelineArtifactCaching.RestoreCacheV1.RestoreCache@1
   inputs:
-    keyfile: 'build/.cachesalt, .yarnrc, remote/.yarnrc, **/yarn.lock, !**/node_modules/**/yarn.lock, !**/.*/**/yarn.lock'
+    keyfile: '.build/arch, build/.cachesalt, .yarnrc, remote/.yarnrc, **/yarn.lock, !**/node_modules/**/yarn.lock, !**/.*/**/yarn.lock'
     targetfolder: '**/node_modules, !**/node_modules/**/node_modules'
     vstsFeed: 'npm-vscode'
 
@@ -67,7 +71,7 @@ steps:
 
 - task: 1ESLighthouseEng.PipelineArtifactCaching.SaveCacheV1.SaveCache@1
   inputs:
-    keyfile: 'build/.cachesalt, .yarnrc, remote/.yarnrc, **/yarn.lock, !**/node_modules/**/yarn.lock, !**/.*/**/yarn.lock'
+    keyfile: '.build/arch, build/.cachesalt, .yarnrc, remote/.yarnrc, **/yarn.lock, !**/node_modules/**/yarn.lock, !**/.*/**/yarn.lock'
     targetfolder: '**/node_modules, !**/node_modules/**/node_modules'
     vstsFeed: 'npm-vscode'
   condition: and(succeeded(), ne(variables['CacheRestored'], 'true'))
@@ -259,6 +263,7 @@ steps:
     APP_NAME="`ls $APP_ROOT | head -n 1`"
     "$APP_ROOT/$APP_NAME/Contents/Resources/app/bin/code" --export-default-configuration=.build
   displayName: Verify start after signing (export configuration)
+  condition: and(succeeded(), eq(variables['VSCODE_ARCH'], 'x64'))
 
 - script: |
     set -e
